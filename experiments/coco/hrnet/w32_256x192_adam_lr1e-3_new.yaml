@@ -12,16 +12,16 @@ PRINT_FREQ: 100
 
 DATASET:
   COLOR_RGB: true
-  DATASET: 'coco'
-  DATA_FORMAT: jpg
-  FLIP: true
+  DATASET: 'babypose'
+  DATA_FORMAT: png
+  FLIP: false
   NUM_JOINTS_HALF_BODY: 8
   PROB_HALF_BODY: 0.3
-  ROOT: 'data/coco/'
+  ROOT: 'data/babypose/'
   ROT_FACTOR: 45
   SCALE_FACTOR: 0.35
-  TEST_SET: 'val2017'
-  TRAIN_SET: 'train2017'
+  TEST_SET: 'val'
+  TRAIN_SET: 'train'
 MODEL:
   INIT_WEIGHTS: true
   NAME: pose_hrnet
