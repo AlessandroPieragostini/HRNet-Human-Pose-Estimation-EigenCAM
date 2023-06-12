@@ -1,5 +1,7 @@
 
 data/
+lib/nms/gpu_nms.cpp
+
 # IntelliJ project files
 .idea
 *.iml

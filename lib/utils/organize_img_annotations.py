@@ -1,4 +1,5 @@
 
+import copy
 import os
 import numpy as np
 import shutil
@@ -7,10 +8,12 @@ import json
 img_root = '.\\data\\babypose\\images\\'
 anno_root = '.\\data\\babypose\\annotations\\'
 li = [3, 4, 5, 6, 7, 11, 14, 15, 16, 17, 20, 21, 22, 24, 25, 26, 30, 34, 36, 37, 39, 42, 43, 66, 73, 74, 76]
-perc = [0.8, 0.1, 0.1] # train, val, test
 images_dict = {}
 
-tot_annotations = {'images': [],'categories': [
+perc = [0.8, 0.1, 0.1] # train, val, test
+modes = ["train", "val", "test"]
+
+template_annotations = {'images': [],'categories': [
         {
             "id": 3,
             "name": "infant",
@@ -45,59 +48,38 @@ tot_annotations = {'images': [],'categories': [
                 "left_knee",
                 "left_foot"
             ],
-            "skeleton": [
-                [
-                    1,
-                    2
-                ],
-                [
-                    2,
-                    3
-                ],
-                [
-                    4,
-                    5
-                ],
-                [
-                    5,
-                    6
-                ],
-                [
-                    7,
-                    8
-                ],
-                [
-                    8,
-                    9
-                ],
-                [
-                    10,
-                    11
-                ],
-                [
-                    11,
-                    12
-                ]
-            ]
+            "skeleton": [ [1,2], [2,3], [4,5], [5,6], [7,8], [8,9], [10,11], [11, 12] ]
         }
     ],'annotations':[]}
 
 def build_annotations():
+
+    tot_annotations = {}
+
+    for mode in modes:
+        tot_annotations[mode] = copy.deepcopy(template_annotations)
     
     for num in li:
-        
+
         with open(anno_root + 'pz' + str(num) + '.json') as json_file:
             f = json.load(json_file)
-            
             for elem in f['images']:
-                new_filename = elem['path'].replace("/datasets/", "").replace("baby_pose/","").replace("/","_")
+                img_id = elem["id"]
+                new_filename = str(img_id).zfill(10) + ".png"
+                mode = images_dict[ int(img_id) ]
                 elem["file_name"] = new_filename
-                elem['path'] = img_root + images_dict[str(num)][new_filename] + "\\" + new_filename
-                tot_annotations["images"].append(elem)
-            tot_annotations['annotations'] += f['annotations']
+                elem['path'] = img_root + mode + "\\" + new_filename
+                tot_annotations[mode]["images"].append(elem)
+        
+            for elem in f["annotations"]:
+                mode = images_dict.get( int(elem["image_id"]) )
+                elem["category_id"] = 3
+                if mode:
+                    tot_annotations[mode]['annotations'].append(elem)
     
-    with open (anno_root + 'train_val_test.json', 'w') as j_file:
-        json.dump(tot_annotations,j_file)
+    for mode in modes:
+        with open (f'{anno_root}person_keypoints_{mode}.json', 'w') as j_file:
+            json.dump(tot_annotations[mode],j_file)
 
 def retrieve_annotations():
     ret = {}
@@ -109,38 +91,33 @@ def retrieve_annotations():
             f = json.load(json_file)
             
             for elem in f['images']:
-                ret[str(num)].append(elem['path'].replace("/datasets/", "").replace("baby_pose/",""))
+                filename = elem['path'].replace("/datasets/", "").replace("baby_pose/","")
+                ret[str(num)].append( (filename, elem["id"]))
     
     return ret
 
 '''
 #Splitta direttamente i pazienti in train, val e test
-def split_by_pz():
-    pzs = np.split(li, [int(len(li)*perc[0]), int(len(li)*(perc[0] + perc[1]))])
 
-    for pz, mode in zip(pzs, ["train", "validation", "test"]):
-        dest_dir = img_root + mode
-        rmake_dir(dest_dir)
-        for index in pz:
-            src_dir = img_root + 'pz' + str(index)
-            copy_files(os.listdir(src_dir), index, mode)
+to implement here
+
 '''
 
-#splitta le foto di ciascun paziente 80 in train, 10 val e 10 test
-def split_by_perc(index, pz_files):
+#Splitta le foto di ciascun paziente 80 in train, 10 val e 10 test
+def split_by_perc(pz_files):
     pzs = np.split(pz_files, [int(len(pz_files)*perc[0]), int(len(pz_files)*(perc[0] + perc[1]))])
-    for pz, mode in zip(pzs, ["train", "validation", "test"]):
-        copy_files(pz,index,mode)
+    for pz, mode in zip(pzs, modes):
+        copy_files(pz, mode)
 
 
-def copy_files(pz_files, pz_number, mode):
+def copy_files(pz_files, mode):
     dest_dir = img_root + mode
 
-    for filename in pz_files:
+    for filename, img_id in pz_files:
         f = os.path.join(img_root, filename)
         if os.path.isfile(f):
-            new_filename = filename.replace("/", "_")
-            images_dict[str(pz_number)][new_filename] = mode
+            new_filename = str(img_id).zfill(10) + ".png"
+            images_dict[ int(img_id) ] = mode
             shutil.copy(f, dest_dir + '\\' + new_filename)
 
 def rmake_dir(dir):
@@ -150,14 +127,12 @@ def rmake_dir(dir):
 
 if __name__ == "__main__":
     files = retrieve_annotations()
-    
-    for pz in li:
-        images_dict[str(pz)] = {}
+    images_dict = {}
 
-    for mode in ["train", "validation", "test"]:
+    for mode in modes:
         rmake_dir(img_root + mode)
 
-    for index, f in files.items():
-        split_by_perc(index, f)
+    for item in files.items():
+        split_by_perc(item[1])
 
     build_annotations()
