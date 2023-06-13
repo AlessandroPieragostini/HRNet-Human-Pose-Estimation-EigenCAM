@@ -42,39 +42,7 @@ class BabyPoseDataset(JointsDataset):
         11 : "left_knee",
         12 : "left_foot"
     },
-	"skeleton": [
-         [
-                    1,
-                    2
-                ],
-                [
-                    2,
-                    3
-                ],
-                [
-                    4,
-                    5
-                ],
-                [
-                    5,
-                    6
-                ],
-                [
-                    7,
-                    8
-                ],
-                [
-                    8,
-                    9
-                ],
-                [
-                    10,
-                    11
-                ],
-                [
-                    11,
-                    12
-                ]]
+	"skeleton": [ [1,2], [2,3], [4,5], [5,6], [7,8], [8,9], [10,11], [11, 12] ]
     '''
     def __init__(self, cfg, root, image_set, is_train, transform=None):
         super().__init__(cfg, root, image_set, is_train, transform)
@@ -257,7 +225,7 @@ class BabyPoseDataset(JointsDataset):
     def image_path_from_index(self, index):
         prefix = 'test2017' if 'test' in self.image_set else self.image_set
         data_name = prefix + '.zip@' if self.data_format == 'zip' else prefix
-        file_name = str(index).zfill(10) + ".png"
+        file_name = str(index).zfill(12) + ".png"
         image_path = os.path.join(
             self.root, 'images', data_name, file_name)
 
@@ -452,6 +420,8 @@ class BabyPoseDataset(JointsDataset):
         coco_dt = self.coco.loadRes(res_file)
         coco_eval = COCOeval(self.coco, coco_dt, 'keypoints')
         coco_eval.params.useSegm = None
+        #sigma array changed
+        coco_eval.params.kpt_oks_sigmas = np.array([.79, .79, .72, .72, .62,.62, 1.07, 1.07, .87, .87, .89, .89])/10.0
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
