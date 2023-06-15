@@ -20,7 +20,7 @@ from torch.utils.data import Dataset
 from utils.transforms import get_affine_transform
 from utils.transforms import affine_transform
 from utils.transforms import fliplr_joints
-from utils.transforms import fliptd_joints
+#from utils.transforms import fliptd_joints
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class JointsDataset(Dataset):
         self.rotation_factor = cfg.DATASET.ROT_FACTOR
         #######Vertical & Horizontal flip###########
         self.flip = cfg.DATASET.FLIP
-        self.vflip = cfg.DATASET.VFLIP
+        #self.vflip = cfg.DATASET.VFLIP
         ###########################################
         self.num_joints_half_body = cfg.DATASET.NUM_JOINTS_HALF_BODY
         self.prob_half_body = cfg.DATASET.PROB_HALF_BODY
@@ -170,6 +170,7 @@ class JointsDataset(Dataset):
                     joints, joints_vis, data_numpy.shape[1], self.flip_pairs)
                 c[0] = data_numpy.shape[1] - c[0] - 1
 
+            '''
             ################ VERTICAL FLIP #########################
             if self.vflip : # and random.random() <= 0.5:
                     data_numpy = data_numpy[::-1, :, :] #vertical flip
@@ -177,6 +178,7 @@ class JointsDataset(Dataset):
                         joints, joints_vis, data_numpy.shape[0], self.flip_pairs)
                     c[1] = data_numpy.shape[0] - c[1] - 1
             #########################################################
+            '''
 
         trans = get_affine_transform(c, s, r, self.image_size)
 

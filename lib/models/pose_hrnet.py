@@ -320,6 +320,14 @@ class PoseHighResolutionNet(nn.Module):
         self.stage4, pre_stage_channels = self._make_stage(
             self.stage4_cfg, num_channels, multi_scale_output=False)
         
+        self.intermediate_layer = nn.Conv2d(
+            in_channels=pre_stage_channels[0],
+            out_channels=cfg.MODEL.NUM_JOINTS,
+            kernel_size=extra.FINAL_CONV_KERNEL,
+            stride=1,
+            padding=1 if extra.FINAL_CONV_KERNEL == 3 else 0
+        )
+
         self.final_layer = nn.Conv2d(
             in_channels=pre_stage_channels[0],
             out_channels=cfg.MODEL.NUM_JOINTS,
@@ -445,19 +453,34 @@ class PoseHighResolutionNet(nn.Module):
                 x_list.append(self.transition2[i](y_list[-1]))
             else:
                 x_list.append(y_list[i])
+        
+        #y_list è l'output dello stage 3, 3 heatmap a risoluzione diversa
         y_list = self.stage3(x_list)
+        #print([ y.shape for y in y_list] )
+       
 
         x_list = []
         for i in range(self.stage4_cfg['NUM_BRANCHES']):
             if self.transition3[i] is not None:
+
                 x_list.append(self.transition3[i](y_list[-1]))
             else:
                 x_list.append(y_list[i])
+        
+        #qui x_list è l'input dello stage 4, 4 heatmap a risoluzione diversa
+        #prendiamo x_list[0] come heatmap studente
+        #print([ x.shape for x in x_list] )
+        
+        student_out = self.intermediate_layer(x_list[0])
+        
         y_list = self.stage4(x_list)
 
-        x = self.final_layer(y_list[0])
+        teacher_out = self.final_layer(y_list[0])
 
-        return x
+        #print(teacher_out.shape)
+        #print(student_out.shape)
+        
+        return teacher_out, student_out
 
     def init_weights(self, pretrained=''):
         logger.info('=> init weights from normal distribution')

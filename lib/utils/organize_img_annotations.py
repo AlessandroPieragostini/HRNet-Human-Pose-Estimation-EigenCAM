@@ -5,6 +5,8 @@ import numpy as np
 import shutil
 import json
 import random
+import rotate_img_annotations as ria
+import cv2
 
 '''
     images_dict è un dizionario
@@ -12,9 +14,9 @@ import random
         val: 'train', 'val' o 'test'
 '''
 
-dir_sep = "\\"
-img_root = dir_sep.join(['.', 'data','babypose','images']) + dir_sep
-anno_root = dir_sep.join(['.','data','babypose','annotations']) + dir_sep
+img_root = os.path.join(".", "data", "babypose", "images")
+anno_root = os.path.join(".", "data", "babypose", "annotations")
+
 li = [3, 4, 5, 6, 7, 11, 14, 15, 16, 17, 20, 21, 22, 24, 25, 26, 30, 34, 36, 37, 39, 42, 43, 66, 73, 74, 76]
 images_dict = {}
 
@@ -74,7 +76,7 @@ def build_annotations():
     
     for num in li:
 
-        with open(anno_root + 'pz' + str(num) + '.json') as json_file:
+        with open( os.path.join(anno_root,  'pz' + str(num) + '.json') ) as json_file:
             f = json.load(json_file)
             for elem in f['images']:
                 img_id = elem["id"]
@@ -82,7 +84,7 @@ def build_annotations():
                     new_filename = str(img_id).zfill(12) + ".png"
                     mode = images_dict[ int(img_id) ]
                     elem["file_name"] = new_filename
-                    elem['path'] = img_root + mode + dir_sep + new_filename
+                    elem['path'] = os.path.join(img_root, mode, new_filename)
                     tot_annotations[mode]["images"].append(elem)
         
             for elem in f["annotations"]:
@@ -90,10 +92,11 @@ def build_annotations():
                 if img_id in images_dict.keys():
                     mode = images_dict.get( int(img_id) )
                     elem["category_id"] = 3
+                    elem["segmentation"] = []
                     tot_annotations[mode]['annotations'].append(elem)
     
     for mode in modes:
-        with open (f'{anno_root}person_keypoints_{mode}.json', 'w') as j_file:
+        with open (os.path.join(anno_root, f'person_keypoints_{mode}.json'), 'w') as j_file:
             json.dump(tot_annotations[mode],j_file)
 
 
@@ -107,7 +110,7 @@ def retrieve_annotated_imgs_by_pz():
     
     for num in li:
         
-        with open(anno_root + 'pz' + str(num) + '.json') as json_file:
+        with open( os.path.join(anno_root , 'pz' + str(num) + '.json') ) as json_file:
             ret[str(num)] = []
             f = json.load(json_file)
             
@@ -162,14 +165,16 @@ def copy_files(pz_files, mode):
     '''
     Copia le immagini in input nella cartella di destinazione (train, val, test)
     '''
-    dest_dir = img_root + mode
+    dest_dir = os.path.join(img_root, mode)
 
     for filename, img_id in pz_files:
         f = os.path.join(img_root, filename)
         if os.path.isfile(f):
             new_filename = str(img_id).zfill(12) + ".png"
+            new_dir = os.path.join(dest_dir, new_filename)
             images_dict[ int(img_id) ] = mode
-            shutil.copy(f, dest_dir + dir_sep + new_filename)
+            img = cv2.imread(f)
+            cv2.imwrite(new_dir, cv2.rotate(img, cv2.ROTATE_180))
 
 def rmake_dir(dir):
     '''
@@ -180,12 +185,20 @@ def rmake_dir(dir):
     os.mkdir(dir)
 
 if __name__ == "__main__":
+    
+    print("analyzing annotations ...")
     files = retrieve_annotated_imgs_by_pz()
     images_dict = {}
-
     for mode in modes:
-        rmake_dir(img_root + mode)
-
+        rmake_dir( os.path.join(img_root, mode) )
+    print("splitting and rotating images ...")
     #split_by_perc(files)
     split_by_pz(files)
+    print("building new annotations ...")
     build_annotations()
+    #rotatating annotations
+    print("adjusting annotations ...")
+    ria.rotate_annotations(anno_root, modes)
+    
+    ########################
+    #ria.visualize_random_annotations(img_root, anno_root, "train")
