@@ -45,6 +45,21 @@ def fliplr_joints(joints, joints_vis, width, matched_parts):
 
     return joints*joints_vis, joints_vis
 
+def fliptd_joints(joints, joints_vis, heigth, matched_parts):
+    """
+    flip coords
+    """
+    # Flip vertical
+    joints[:, 1] = heigth - joints[:, 1] - 1
+
+    # Change left-right parts
+    for pair in matched_parts:
+        joints[pair[0], :], joints[pair[1], :] = \
+            joints[pair[1], :], joints[pair[0], :].copy()
+        joints_vis[pair[0], :], joints_vis[pair[1], :] = \
+            joints_vis[pair[1], :], joints_vis[pair[0], :].copy()
+
+    return joints*joints_vis, joints_vis
 
 def transform_preds(coords, center, scale, output_size):
     target_coords = np.zeros(coords.shape)

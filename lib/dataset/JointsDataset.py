@@ -20,7 +20,7 @@ from torch.utils.data import Dataset
 from utils.transforms import get_affine_transform
 from utils.transforms import affine_transform
 from utils.transforms import fliplr_joints
-
+from utils.transforms import fliptd_joints
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,10 @@ class JointsDataset(Dataset):
 
         self.scale_factor = cfg.DATASET.SCALE_FACTOR
         self.rotation_factor = cfg.DATASET.ROT_FACTOR
+        #######Vertical & Horizontal flip###########
         self.flip = cfg.DATASET.FLIP
+        self.vflip = cfg.DATASET.VFLIP
+        ###########################################
         self.num_joints_half_body = cfg.DATASET.NUM_JOINTS_HALF_BODY
         self.prob_half_body = cfg.DATASET.PROB_HALF_BODY
         self.color_rgb = cfg.DATASET.COLOR_RGB
@@ -55,6 +58,7 @@ class JointsDataset(Dataset):
 
         self.transform = transform
         self.db = []
+        #self.count = 0
 
     def _get_db(self):
         raise NotImplementedError
@@ -158,19 +162,36 @@ class JointsDataset(Dataset):
             r = np.clip(np.random.randn()*rf, -rf*2, rf*2) \
                 if random.random() <= 0.6 else 0
 
+            
+            #HORIZONTAL FLIP
             if self.flip and random.random() <= 0.5:
-                data_numpy = data_numpy[:, ::-1, :]
+                data_numpy = data_numpy[:, ::-1, :] #horizontal flip
                 joints, joints_vis = fliplr_joints(
                     joints, joints_vis, data_numpy.shape[1], self.flip_pairs)
                 c[0] = data_numpy.shape[1] - c[0] - 1
 
+            ################ VERTICAL FLIP #########################
+            if self.vflip : # and random.random() <= 0.5:
+                    data_numpy = data_numpy[::-1, :, :] #vertical flip
+                    joints, joints_vis = fliptd_joints(
+                        joints, joints_vis, data_numpy.shape[0], self.flip_pairs)
+                    c[1] = data_numpy.shape[0] - c[1] - 1
+            #########################################################
+
         trans = get_affine_transform(c, s, r, self.image_size)
+
         input = cv2.warpAffine(
             data_numpy,
             trans,
             (int(self.image_size[0]), int(self.image_size[1])),
             flags=cv2.INTER_LINEAR)
 
+        ######## Save augmented images ################
+        #print(f"saving {self.count} ...")
+        #cv2.imwrite(f"prova/{self.count}.png", input)
+        #self.count += 1
+        #############################################
+        
         if self.transform:
             input = self.transform(input)
 

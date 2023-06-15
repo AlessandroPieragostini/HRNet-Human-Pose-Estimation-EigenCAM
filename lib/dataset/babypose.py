@@ -99,13 +99,12 @@ class BabyPoseDataset(JointsDataset):
 
         if is_train and cfg.DATASET.SELECT_DATA:
             self.db = self.select_data(self.db)
-
+        
         logger.info('=> load {} samples'.format(len(self.db)))
 
     def _get_ann_file_keypoint(self):
         """ self.root / annotations / person_keypoints_train2017.json """
-        prefix = 'person_keypoints' \
-            if 'test' not in self.image_set else 'image_info'
+        prefix = 'person_keypoints'
         return os.path.join(
             self.root,
             'annotations',
@@ -223,7 +222,7 @@ class BabyPoseDataset(JointsDataset):
 
     #changed here
     def image_path_from_index(self, index):
-        prefix = 'test2017' if 'test' in self.image_set else self.image_set
+        prefix = self.image_set
         data_name = prefix + '.zip@' if self.data_format == 'zip' else prefix
         file_name = str(index).zfill(12) + ".png"
         image_path = os.path.join(
