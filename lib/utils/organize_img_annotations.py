@@ -127,26 +127,24 @@ def retrieve_annotated_imgs_by_pz():
 
 def split_by_pz(files):
     '''
-    Splitta i pazienti in trainval e test
-    I pazienti trainval sono 80% train e 20% val
-    I pazienti test sono tutti di test
+    Splitta i pazienti in train, val e test
+    I pazienti sono divisi a priori in 80% train, 10% val e 10% test
     '''
     random.seed(1)
     random.shuffle(li)
-    trainval_test = np.split(li, [int(len(li)*0.8)])
-    trainval = trainval_test[0]
-    test = trainval_test[1]
-
-    for num in trainval:
-        pz_files = files[str(num)]
-        random.shuffle(pz_files)
-        pzs = np.split(pz_files, [int(len(pz_files)*0.8)])
-        for pz, mode in zip(pzs, modes[:2]):
-            copy_files(pz, mode)
+    train_valtest = np.split(li, [int(len(li)*perc[0])])
+    n_val = len(li)*perc[1] # numero di pazienti nel val set
     
-    for num in test:
-        pzs = files[str(num)]
-        copy_files(pzs, "test")
+    dt = {}
+    dt["train"] = train_valtest[0]
+    valtest = np.split(train_valtest[1], [int(np.ceil(n_val))])
+    dt["val"] = valtest[0]
+    dt["test"] = valtest[1]
+    
+    for mode in modes:
+        for num_pz in dt[mode]:
+            pzs = files[str(num_pz)]
+            copy_files(pzs,mode)
 
 def split_by_perc(files):
     '''
@@ -188,6 +186,6 @@ if __name__ == "__main__":
     for mode in modes:
         rmake_dir(img_root + mode)
 
-    split_by_perc(files)
-    #split_by_pz(files)
+    #split_by_perc(files)
+    split_by_pz(files)
     build_annotations()
