@@ -39,7 +39,7 @@ def train(config, train_loader, model, criterion, optimizer, epoch,
         # measure data loading time
         data_time.update(time.time() - end)
 
-        # compute output
+        # compute outputs = teacher_out, stud_out
         outputs = model(input)
 
         target = target.cuda(non_blocking=True)
@@ -89,26 +89,35 @@ def train(config, train_loader, model, criterion, optimizer, epoch,
             writer.add_scalar('train_acc', acc.val, global_steps)
             writer_dict['train_global_steps'] = global_steps + 1
 
-            prefix = '{}_{}'.format(os.path.join(output_dir, 'train'), i)
+            prefix = '{}_{}_ep{}'.format(os.path.join(output_dir, 'train'), i, epoch)
             save_debug_images(config, input, meta, target, pred*4, output,
                               prefix)
 
 
 def validate(config, val_loader, val_dataset, model, criterion, output_dir,
-             tb_log_dir, writer_dict=None):
+             tb_log_dir, writer_dict=None, epoch = 0):
+    
     batch_time = AverageMeter()
-    losses = AverageMeter()
-    acc = AverageMeter()
+    
+    losses_teacher = AverageMeter()
+    losses_stud = AverageMeter()
+
+    acc_teacher = AverageMeter()
+    acc_stud = AverageMeter()
 
     # switch to evaluate mode
     model.eval()
 
     num_samples = len(val_dataset)
+
+    # 2 stands for teacher, student
     all_preds = np.zeros(
-        (num_samples, config.MODEL.NUM_JOINTS, 3),
+        (2, num_samples, config.MODEL.NUM_JOINTS, 3),
         dtype=np.float32
     )
-    all_boxes = np.zeros((num_samples, 6))
+    
+    # 2 stands for teacher, student
+    all_boxes = np.zeros((2, num_samples, 6))
     image_path = []
     filenames = []
     imgnums = []
@@ -116,128 +125,175 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir,
     with torch.no_grad():
         end = time.time()
         for i, (input, target, target_weight, meta) in enumerate(val_loader):
-            # compute output
+            # compute outputs = teacher_out, stud_out
             outputs = model(input)
-            if isinstance(outputs, list):
-                output = outputs[-1]
-            else:
-                output = outputs
-
-            if config.TEST.FLIP_TEST:
-                # this part is ugly, because pytorch has not supported negative index
-                # input_flipped = model(input[:, :, :, ::-1])
-                input_flipped = np.flip(input.cpu().numpy(), 3).copy()
-                input_flipped = torch.from_numpy(input_flipped).cuda()
-                outputs_flipped = model(input_flipped)
-
-                if isinstance(outputs_flipped, list):
-                    output_flipped = outputs_flipped[-1]
-                else:
-                    output_flipped = outputs_flipped
-
-                output_flipped = flip_back(output_flipped.cpu().numpy(),
-                                           val_dataset.flip_pairs)
-                output_flipped = torch.from_numpy(output_flipped.copy()).cuda()
-
-
-                # feature is not aligned, shift flipped heatmap for higher accuracy
-                if config.TEST.SHIFT_HEATMAP:
-                    output_flipped[:, :, :, 1:] = \
-                        output_flipped.clone()[:, :, :, 0:-1]
-
-                output = (output + output_flipped) * 0.5
-
             target = target.cuda(non_blocking=True)
             target_weight = target_weight.cuda(non_blocking=True)
-
-            loss = criterion(output, target, target_weight)
-
             num_images = input.size(0)
-            # measure accuracy and record loss
-            losses.update(loss.item(), num_images)
-            _, avg_acc, cnt, pred = accuracy(output.cpu().numpy(),
-                                             target.cpu().numpy())
+            
+            for index, output in enumerate(outputs):
+                '''
+                calculate performances only on last output
 
-            acc.update(avg_acc, cnt)
+                if isinstance(outputs, list):
+                    output = outputs[-1]
+                else:
+                    output = outputs
+                '''
+                
+                '''
+                flip test
+                if config.TEST.FLIP_TEST:
+                    # flip orizzontale
+                    # this part is ugly, because pytorch has not supported negative index
+                    # input_flipped = model(input[:, :, :, ::-1])
+                    input_flipped = np.flip(input.cpu().numpy(), 3).copy()
+                    input_flipped = torch.from_numpy(input_flipped).cuda()
+                    outputs_flipped = model(input_flipped)
 
-            # measure elapsed time
-            batch_time.update(time.time() - end)
-            end = time.time()
+                    if isinstance(outputs_flipped, list):
+                        output_flipped = outputs_flipped[-1]
+                    else:
+                        output_flipped = outputs_flipped
 
-            c = meta['center'].numpy()
-            s = meta['scale'].numpy()
-            score = meta['score'].numpy()
+                    output_flipped = flip_back(output_flipped.cpu().numpy(),
+                                            val_dataset.flip_pairs)
+                    output_flipped = torch.from_numpy(output_flipped.copy()).cuda()
 
-            preds, maxvals = get_final_preds(
-                config, output.clone().cpu().numpy(), c, s)
 
-            all_preds[idx:idx + num_images, :, 0:2] = preds[:, :, 0:2]
-            all_preds[idx:idx + num_images, :, 2:3] = maxvals
-            # double check this all_boxes parts
-            all_boxes[idx:idx + num_images, 0:2] = c[:, 0:2]
-            all_boxes[idx:idx + num_images, 2:4] = s[:, 0:2]
-            all_boxes[idx:idx + num_images, 4] = np.prod(s*200, 1)
-            all_boxes[idx:idx + num_images, 5] = score
+                    # feature is not aligned, shift flipped heatmap for higher accuracy
+                    if config.TEST.SHIFT_HEATMAP:
+                        output_flipped[:, :, :, 1:] = \
+                            output_flipped.clone()[:, :, :, 0:-1]
+
+                    output = (output + output_flipped) * 0.5
+                '''
+
+                loss = criterion(output, target, target_weight)
+                # measure accuracy and record loss
+                if index == 0:
+                    losses_teacher.update(loss.item(), num_images)
+                    _, avg_acc, cnt, pred = accuracy(output.cpu().numpy(),
+                                                    target.cpu().numpy())
+
+                    acc_teacher.update(avg_acc, cnt)
+                else:
+                    losses_stud.update(loss.item(), num_images)
+                    _, avg_acc, cnt, pred = accuracy(output.cpu().numpy(),
+                                                    target.cpu().numpy())
+
+                    acc_stud.update(avg_acc, cnt)
+
+                # measure elapsed time
+                batch_time.update(time.time() - end)
+                end = time.time()
+
+                c = meta['center'].numpy()
+                s = meta['scale'].numpy()
+                score = meta['score'].numpy()
+
+                preds, maxvals = get_final_preds(
+                    config, output.clone().cpu().numpy(), c, s)
+
+                all_preds[index][idx:idx + num_images, :, 0:2] = preds[:, :, 0:2]
+                all_preds[index][idx:idx + num_images, :, 2:3] = maxvals
+                # double check this all_boxes parts
+                all_boxes[index][idx:idx + num_images, 0:2] = c[:, 0:2]
+                all_boxes[index][idx:idx + num_images, 2:4] = s[:, 0:2]
+                all_boxes[index][idx:idx + num_images, 4] = np.prod(s*200, 1)
+                all_boxes[index][idx:idx + num_images, 5] = score
+            
             image_path.extend(meta['image'])
-
             idx += num_images
 
             if i % config.PRINT_FREQ == 0:
-                msg = 'Test: [{0}/{1}]\t' \
-                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t' \
-                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t' \
-                      'Accuracy {acc.val:.3f} ({acc.avg:.3f})'.format(
-                          i, len(val_loader), batch_time=batch_time,
-                          loss=losses, acc=acc)
-                logger.info(msg)
+                
+                teacher_msg = 'Teacher\nTest: [{0}/{1}]\t' \
+                    'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t' \
+                    'Loss {loss.val:.4f} ({loss.avg:.4f})\t' \
+                    'Accuracy {acc.val:.3f} ({acc.avg:.3f})'.format(
+                        i, len(val_loader), batch_time=batch_time,
+                        loss=losses_teacher, acc=acc_teacher)
+                
+                stud_msg = 'Student\nTest: [{0}/{1}]\t' \
+                    'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t' \
+                    'Loss {loss.val:.4f} ({loss.avg:.4f})\t' \
+                    'Accuracy {acc.val:.3f} ({acc.avg:.3f})'.format(
+                        i, len(val_loader), batch_time=batch_time,
+                        loss=losses_stud, acc=acc_stud)
+                logger.info(teacher_msg)
+                logger.info(stud_msg)
 
-                prefix = '{}_{}'.format(
-                    os.path.join(output_dir, 'val'), i
+                prefix = '{}_{}_ep{}'.format(
+                    os.path.join(output_dir, 'val'), i, epoch
                 )
-                save_debug_images(config, input, meta, target, pred*4, output,
-                                  prefix)
 
-        name_values, perf_indicator = val_dataset.evaluate(
-            config, all_preds, output_dir, all_boxes, image_path,
-            filenames, imgnums
-        )
+                save_debug_images(config, input, meta, target, pred*4, output[0],
+                                    prefix  + "_teacher")
+                save_debug_images(config, input, meta, target, pred*4, output[1],
+                                    prefix  + "_stud")
 
         model_name = config.MODEL.NAME
-        if isinstance(name_values, list):
-            for name_value in name_values:
-                _print_name_value(name_value, model_name)
-        else:
-            _print_name_value(name_values, model_name)
 
-        if writer_dict:
-            writer = writer_dict['writer']
-            global_steps = writer_dict['valid_global_steps']
-            writer.add_scalar(
-                'valid_loss',
-                losses.avg,
-                global_steps
+        perf_indicators = [0, 0]
+
+        for index, mode in zip([0,1], ["teacher", "stud"]):
+
+            name_values, perf_indicators[index] = val_dataset.evaluate(
+                config, all_preds[index], output_dir, all_boxes[index], image_path,
+                filenames, imgnums
             )
-            writer.add_scalar(
-                'valid_acc',
-                acc.avg,
-                global_steps
-            )
+
             if isinstance(name_values, list):
                 for name_value in name_values:
-                    writer.add_scalars(
-                        'valid',
-                        dict(name_value),
+                    _print_name_value(name_value, model_name)
+            else:
+                _print_name_value(name_values, model_name)
+
+            if writer_dict:
+                writer = writer_dict['writer']
+                global_steps = writer_dict['valid_global_steps']
+
+                if index == 0:
+                    writer.add_scalar(
+                        mode + '_valid_loss',
+                        losses_teacher.avg,
                         global_steps
                     )
-            else:
-                writer.add_scalars(
-                    'valid',
-                    dict(name_values),
-                    global_steps
-                )
-            writer_dict['valid_global_steps'] = global_steps + 1
+                    writer.add_scalar(
+                        mode + '_valid_acc',
+                        acc_teacher.avg,
+                        global_steps
+                    )
+                else:
+                    writer.add_scalar(
+                        mode + '_valid_loss',
+                        losses_stud.avg,
+                        global_steps
+                    )
+                    writer.add_scalar(
+                        mode + '_valid_acc',
+                        acc_stud.avg,
+                        global_steps
+                    )
 
-    return perf_indicator
+                if isinstance(name_values, list):
+                    for name_value in name_values:
+                        writer.add_scalars(
+                            mode + '_valid',
+                            dict(name_value),
+                            global_steps
+                        )
+                else:
+                    writer.add_scalars(
+                        mode + '_valid',
+                        dict(name_values),
+                        global_steps
+                    )
+        
+        writer_dict['valid_global_steps'] = global_steps + 1
+
+    return perf_indicators
 
 
 # markdown format output

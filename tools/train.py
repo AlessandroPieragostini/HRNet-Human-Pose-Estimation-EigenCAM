@@ -188,13 +188,13 @@ def main():
 
 
         # evaluate on validation set
-        perf_indicator = validate(
+        perf_indicators = validate(
             cfg, valid_loader, valid_dataset, model, criterion,
-            final_output_dir, tb_log_dir, writer_dict
+            final_output_dir, tb_log_dir, writer_dict, epoch
         )
 
-        if perf_indicator >= best_perf:
-            best_perf = perf_indicator
+        if perf_indicators[0] >= best_perf:
+            best_perf = perf_indicators[0]
             best_model = True
         else:
             best_model = False
@@ -205,7 +205,7 @@ def main():
             'model': cfg.MODEL.NAME,
             'state_dict': model.state_dict(),
             'best_state_dict': model.module.state_dict(),
-            'perf': perf_indicator,
+            'perf': perf_indicators[0],
             'optimizer': optimizer.state_dict(),
         }, best_model, final_output_dir)
 
