@@ -4,7 +4,7 @@ import json
 import numpy as np
 import random
 #import skimage.io as io
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 
 def rotate_annotations(anno_root, modes):

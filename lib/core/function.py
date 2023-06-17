@@ -39,7 +39,7 @@ def train(config, train_loader, model, criterion, optimizer, epoch,
         # measure data loading time
         data_time.update(time.time() - end)
 
-        # compute outputs = teacher_out, stud_out
+        # compute outputs = outputs from stages
         outputs = model(input)
 
         target = target.cuda(non_blocking=True)
@@ -99,25 +99,27 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir,
     
     batch_time = AverageMeter()
     
-    losses_teacher = AverageMeter()
-    losses_stud = AverageMeter()
-
-    acc_teacher = AverageMeter()
-    acc_stud = AverageMeter()
-
+    losses = []
+    accs = []
+    roles = []
+    for i in range(config.MODEL.N_STAGE):
+        losses.append(AverageMeter())
+        accs.append(AverageMeter())
+        roles.append('Teacher' if i == config.MODEL.N_STAGE-1 else f'Student{i}')
+    
     # switch to evaluate mode
     model.eval()
 
     num_samples = len(val_dataset)
 
-    # 2 stands for teacher, student
+    # N_STAGE corrisponde al numero di stage e output
     all_preds = np.zeros(
-        (2, num_samples, config.MODEL.NUM_JOINTS, 3),
+        (config.MODEL.N_STAGE, num_samples, config.MODEL.NUM_JOINTS, 3),
         dtype=np.float32
     )
     
     # 2 stands for teacher, student
-    all_boxes = np.zeros((2, num_samples, 6))
+    all_boxes = np.zeros((config.MODEL.N_STAGE, num_samples, 6))
     image_path = []
     filenames = []
     imgnums = []
@@ -171,18 +173,12 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir,
 
                 loss = criterion(output, target, target_weight)
                 # measure accuracy and record loss
-                if index == 0:
-                    losses_teacher.update(loss.item(), num_images)
-                    _, avg_acc, cnt, pred = accuracy(output.cpu().numpy(),
-                                                    target.cpu().numpy())
+                
+                losses[index].update(loss.item(), num_images)
+                _, avg_acc, cnt, pred = accuracy(output.cpu().numpy(),
+                                                target.cpu().numpy())
 
-                    acc_teacher.update(avg_acc, cnt)
-                else:
-                    losses_stud.update(loss.item(), num_images)
-                    _, avg_acc, cnt, pred = accuracy(output.cpu().numpy(),
-                                                    target.cpu().numpy())
-
-                    acc_stud.update(avg_acc, cnt)
+                accs[index].update(avg_acc, cnt)
 
                 # measure elapsed time
                 batch_time.update(time.time() - end)
@@ -208,36 +204,27 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir,
 
             if i % config.PRINT_FREQ == 0:
                 
-                teacher_msg = 'Teacher\nTest: [{0}/{1}]\t' \
-                    'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t' \
-                    'Loss {loss.val:.4f} ({loss.avg:.4f})\t' \
-                    'Accuracy {acc.val:.3f} ({acc.avg:.3f})'.format(
-                        i, len(val_loader), batch_time=batch_time,
-                        loss=losses_teacher, acc=acc_teacher)
-                
-                stud_msg = 'Student\nTest: [{0}/{1}]\t' \
-                    'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t' \
-                    'Loss {loss.val:.4f} ({loss.avg:.4f})\t' \
-                    'Accuracy {acc.val:.3f} ({acc.avg:.3f})'.format(
-                        i, len(val_loader), batch_time=batch_time,
-                        loss=losses_stud, acc=acc_stud)
-                logger.info(teacher_msg)
-                logger.info(stud_msg)
-
                 prefix = '{}_{}_ep{}'.format(
                     os.path.join(output_dir, 'val'), i, epoch
                 )
-
-                save_debug_images(config, input, meta, target, pred*4, output[0],
-                                    prefix  + "_teacher")
-                save_debug_images(config, input, meta, target, pred*4, output[1],
-                                    prefix  + "_stud")
-
+                 
+                for j in range(config.MODEL.N_STAGE):
+                    msg = roles[j] + '\nTest: [{0}/{1}]\t' \
+                        'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t' \
+                        'Loss {loss.val:.4f} ({loss.avg:.4f})\t' \
+                        'Accuracy {acc.val:.3f} ({acc.avg:.3f})'.format(
+                            i, len(val_loader), batch_time=batch_time,
+                            loss=losses[j], acc=accs[j])
+                        
+                    logger.info(msg)
+                    save_debug_images(config, input, meta, target, pred*4, outputs[j],
+                                    prefix  + "_" + roles[j])
+                    
         model_name = config.MODEL.NAME
 
-        perf_indicators = [0, 0]
+        perf_indicators = [0]*config.MODEL.N_STAGE
 
-        for index, mode in zip([0,1], ["teacher", "stud"]):
+        for index, role in enumerate(roles):
 
             name_values, perf_indicators[index] = val_dataset.evaluate(
                 config, all_preds[index], output_dir, all_boxes[index], image_path,
@@ -254,44 +241,32 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir,
                 writer = writer_dict['writer']
                 global_steps = writer_dict['valid_global_steps']
 
-                if index == 0:
-                    writer.add_scalar(
-                        mode + '_valid_loss',
-                        losses_teacher.avg,
-                        global_steps
-                    )
-                    writer.add_scalar(
-                        mode + '_valid_acc',
-                        acc_teacher.avg,
-                        global_steps
-                    )
-                else:
-                    writer.add_scalar(
-                        mode + '_valid_loss',
-                        losses_stud.avg,
-                        global_steps
-                    )
-                    writer.add_scalar(
-                        mode + '_valid_acc',
-                        acc_stud.avg,
-                        global_steps
-                    )
+                writer.add_scalar(
+                    role + '_valid_loss',
+                    losses[index].avg,
+                    global_steps
+                )
+                writer.add_scalar(
+                    role + '_valid_acc',
+                    accs[index].avg,
+                    global_steps
+                )
 
                 if isinstance(name_values, list):
                     for name_value in name_values:
                         writer.add_scalars(
-                            mode + '_valid',
+                            role + '_valid',
                             dict(name_value),
                             global_steps
                         )
                 else:
                     writer.add_scalars(
-                        mode + '_valid',
+                        role + '_valid',
                         dict(name_values),
                         global_steps
                     )
-        
-        writer_dict['valid_global_steps'] = global_steps + 1
+        if writer_dict:
+            writer_dict['valid_global_steps'] += 1
 
     return perf_indicators
 

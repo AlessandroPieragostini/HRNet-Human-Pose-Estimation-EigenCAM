@@ -193,8 +193,8 @@ def main():
             final_output_dir, tb_log_dir, writer_dict, epoch
         )
 
-        if perf_indicators[0] >= best_perf:
-            best_perf = perf_indicators[0]
+        if perf_indicators[-1] >= best_perf:
+            best_perf = perf_indicators[-1]
             best_model = True
         else:
             best_model = False
