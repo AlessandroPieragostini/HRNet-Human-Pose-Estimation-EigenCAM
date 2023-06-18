@@ -18,13 +18,13 @@ import torch
 from core.evaluate import accuracy
 from core.inference import get_final_preds
 from utils.transforms import flip_back
-from utils.vis import save_debug_images
+from utils.vis import save_other_debug_images, save_gt_debug_image
 
 
 logger = logging.getLogger(__name__)
 
 
-def train(config, train_loader, model, criterion, optimizer, epoch,
+def train(config, train_loader, model, criterion, criterion_kd, optimizer, epoch,
           output_dir, tb_log_dir, writer_dict):
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -44,7 +44,12 @@ def train(config, train_loader, model, criterion, optimizer, epoch,
 
         target = target.cuda(non_blocking=True)
         target_weight = target_weight.cuda(non_blocking=True)
+        
 
+        '''
+        #here sums all losses of different outputs
+        #to change
+        
         if isinstance(outputs, list):
             loss = criterion(outputs[0], target, target_weight)
             for output in outputs[1:]:
@@ -52,9 +57,17 @@ def train(config, train_loader, model, criterion, optimizer, epoch,
         else:
             output = outputs
             loss = criterion(output, target, target_weight)
+        '''
 
-        # loss = criterion(output, target, target_weight)
+        output = outputs[-1]
+        loss = criterion(output, target, target_weight)
 
+        # outputs[-1] teacher
+        # outputs[-2] student
+
+        if config.LOSS.USE_KLD:
+            loss += criterion_kd(outputs[-2], outputs[-1], target_weight)
+            
         # compute gradient and do update step
         optimizer.zero_grad()
         loss.backward()
@@ -83,18 +96,19 @@ def train(config, train_loader, model, criterion, optimizer, epoch,
                       data_time=data_time, loss=losses, acc=acc)
             logger.info(msg)
 
-            writer = writer_dict['writer']
-            global_steps = writer_dict['train_global_steps']
-            writer.add_scalar('train_loss', losses.val, global_steps)
-            writer.add_scalar('train_acc', acc.val, global_steps)
-            writer_dict['train_global_steps'] = global_steps + 1
-
             prefix = '{}_{}_ep{}'.format(os.path.join(output_dir, 'train'), i, epoch)
-            save_debug_images(config, input, meta, target, pred*4, output,
+            save_other_debug_images(config, input, meta, target, pred*4, output,
                               prefix)
+        
+        #once for epoch
+        writer = writer_dict['writer']
+        global_steps = writer_dict['train_global_steps']
+        writer.add_scalar('train_loss', losses.val, global_steps)
+        writer.add_scalar('train_acc', acc.val, global_steps)
+        writer_dict['train_global_steps'] = global_steps + 1
 
 
-def validate(config, val_loader, val_dataset, model, criterion, output_dir,
+def validate(config, val_loader, val_dataset, model, criterion, criterion_kd,  output_dir,
              tb_log_dir, writer_dict=None, epoch = 0):
     
     batch_time = AverageMeter()
@@ -105,7 +119,7 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir,
     for i in range(config.MODEL.N_STAGE):
         losses.append(AverageMeter())
         accs.append(AverageMeter())
-        roles.append('Teacher' if i == config.MODEL.N_STAGE-1 else f'Student{i}')
+        roles.append('Teacher' if i == config.MODEL.N_STAGE-1 else f'Student{i+1}')
     
     # switch to evaluate mode
     model.eval()
@@ -118,7 +132,7 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir,
         dtype=np.float32
     )
     
-    # 2 stands for teacher, student
+    # N_STAGE corrisponde al numero di stage e output
     all_boxes = np.zeros((config.MODEL.N_STAGE, num_samples, 6))
     image_path = []
     filenames = []
@@ -204,8 +218,8 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir,
 
             if i % config.PRINT_FREQ == 0:
                 
-                prefix = '{}_{}_ep{}'.format(
-                    os.path.join(output_dir, 'val'), i, epoch
+                prefix = '{}_ep{}_b{}'.format(
+                    os.path.join(output_dir, 'val'), epoch, i
                 )
                  
                 for j in range(config.MODEL.N_STAGE):
@@ -217,13 +231,15 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir,
                             loss=losses[j], acc=accs[j])
                         
                     logger.info(msg)
-                    save_debug_images(config, input, meta, target, pred*4, outputs[j],
+                    save_gt_debug_image(config, input, meta, prefix)
+                    save_other_debug_images(config, input, meta, target, pred*4, outputs[j],
                                     prefix  + "_" + roles[j])
                     
         model_name = config.MODEL.NAME
 
         perf_indicators = [0]*config.MODEL.N_STAGE
 
+        #once for epoch
         for index, role in enumerate(roles):
 
             name_values, perf_indicators[index] = val_dataset.evaluate(

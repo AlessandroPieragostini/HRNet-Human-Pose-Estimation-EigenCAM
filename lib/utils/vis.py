@@ -116,16 +116,11 @@ def save_batch_heatmaps(batch_image, batch_heatmaps, file_name,
     cv2.imwrite(file_name, grid_image)
 
 
-def save_debug_images(config, input, meta, target, joints_pred, output,
+def save_other_debug_images(config, input, meta, target, joints_pred, output,
                       prefix):
     if not config.DEBUG.DEBUG:
         return
-
-    if config.DEBUG.SAVE_BATCH_IMAGES_GT:
-        save_batch_image_with_joints(
-            input, meta['joints'], meta['joints_vis'],
-            '{}_gt.jpg'.format(prefix)
-        )
+    
     if config.DEBUG.SAVE_BATCH_IMAGES_PRED:
         save_batch_image_with_joints(
             input, joints_pred, meta['joints_vis'],
@@ -138,4 +133,15 @@ def save_debug_images(config, input, meta, target, joints_pred, output,
     if config.DEBUG.SAVE_HEATMAPS_PRED:
         save_batch_heatmaps(
             input, output, '{}_hm_pred.jpg'.format(prefix)
+        )
+
+def save_gt_debug_image(config, input, meta, prefix):
+    
+    if not config.DEBUG.DEBUG:
+        return
+
+    if config.DEBUG.SAVE_BATCH_IMAGES_GT:
+        save_batch_image_with_joints(
+            input, meta['joints'], meta['joints_vis'],
+            '{}_gt.jpg'.format(prefix)
         )
