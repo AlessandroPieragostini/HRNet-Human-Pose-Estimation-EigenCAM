@@ -12,7 +12,6 @@ def get_pose_net(cfg, is_train, **kwargs):
 class MultiOutPoseHrnet(PoseHighResolutionNet):
     
     def __init__(self, cfg, **kwargs):
-        self.inplanes = 64
         extra = cfg.MODEL.EXTRA
         super(MultiOutPoseHrnet, self).__init__(cfg, **kwargs)
         self.n_stage = cfg.MODEL.N_STAGE
@@ -21,8 +20,7 @@ class MultiOutPoseHrnet(PoseHighResolutionNet):
         
         for i in range(self.n_stage):
             self.intermediate_layers.append( nn.Conv2d(
-            #in_channels=pre_stage_channels[0],
-            in_channels= 32,
+            in_channels= cfg.MODEL.OUT_CHANNELS,
             out_channels=cfg.MODEL.NUM_JOINTS,
             kernel_size=extra.FINAL_CONV_KERNEL,
             stride=1,

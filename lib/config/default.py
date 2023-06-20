@@ -40,6 +40,7 @@ _C.MODEL.PRETRAINED = ''
 _C.MODEL.NUM_JOINTS = 17
 _C.MODEL.TAG_PER_JOINT = True
 _C.MODEL.N_STAGE = 4
+_C.MODEL.OUT_CHANNELS = 32
 _C.MODEL.TARGET_TYPE = 'gaussian'
 _C.MODEL.IMAGE_SIZE = [256, 256]  # width * height, ex: 192 * 256
 _C.MODEL.HEATMAP_SIZE = [64, 64]  # width * height, ex: 24 * 32
@@ -94,6 +95,11 @@ _C.TRAIN.CHECKPOINT = ''
 
 _C.TRAIN.BATCH_SIZE_PER_GPU = 32
 _C.TRAIN.SHUFFLE = True
+
+#distillation config
+_C.TRAIN.KLD_WEIGHT = 5.0
+_C.TRAIN.TEACHER_WEIGHT = 6.0
+_C.TRAIN.LENGTH = 60
 
 # testing
 _C.TEST = CN()

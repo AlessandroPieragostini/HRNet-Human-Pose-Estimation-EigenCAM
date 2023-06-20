@@ -21,6 +21,7 @@ import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
 from tensorboardX import SummaryWriter
+from codecarbon import track_emissions
 
 import _init_paths
 from config import cfg
@@ -73,7 +74,7 @@ def parse_args():
 
     return args
 
-
+@track_emissions(save_to_api=True)
 def main():
     args = parse_args()
     update_config(cfg, args)
@@ -120,7 +121,7 @@ def main():
         use_target_weight=cfg.LOSS.USE_TARGET_WEIGHT
     ).cuda()
 
-    criterion_kd = JointsKLDLoss().cuda()
+    criterion_kld = JointsKLDLoss().cuda()
 
     # Data loading code
     normalize = transforms.Normalize(
@@ -186,13 +187,13 @@ def main():
         lr_scheduler.step()
 
         # train for one epoch
-        train(cfg, train_loader, model, criterion, criterion_kd, optimizer, epoch,
+        train(cfg, train_loader, model, criterion, criterion_kld, optimizer, epoch,
               final_output_dir, tb_log_dir, writer_dict)
 
 
         # evaluate on validation set
         perf_indicators = validate(
-            cfg, valid_loader, valid_dataset, model, criterion, criterion_kd,
+            cfg, valid_loader, valid_dataset, model, criterion, criterion_kld,
             final_output_dir, tb_log_dir, writer_dict, epoch
         )
 

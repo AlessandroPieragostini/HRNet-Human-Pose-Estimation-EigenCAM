@@ -26,7 +26,7 @@ from tensorboardX import SummaryWriter
 import _init_paths
 from config import cfg
 from config import update_config
-from core.loss import JointsMSELoss
+from core.loss import JointsMSELoss, JointsKLDLoss
 from core.function import validate
 from utils.utils import create_logger
 
@@ -110,6 +110,8 @@ def main():
         use_target_weight=cfg.LOSS.USE_TARGET_WEIGHT
     ).cuda()
 
+    criterion_kld = JointsKLDLoss().cuda()
+
     # Data loading code
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
@@ -130,7 +132,7 @@ def main():
     )
 
     # evaluate on validation set
-    validate(cfg, valid_loader, valid_dataset, model, criterion,
+    validate(cfg, valid_loader, valid_dataset, model, criterion, criterion_kld,
              final_output_dir, tb_log_dir, writer_dict)
 
 
