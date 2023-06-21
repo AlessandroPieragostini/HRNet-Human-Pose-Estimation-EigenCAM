@@ -167,6 +167,9 @@ def main():
         final_output_dir, 'checkpoint.pth'
     )
 
+    patience = 10
+    waiting = 0
+
     if cfg.AUTO_RESUME and os.path.exists(checkpoint_file):
         logger.info("=> loading checkpoint '{}'".format(checkpoint_file))
         checkpoint = torch.load(checkpoint_file)
@@ -201,7 +204,9 @@ def main():
         if perf_indicators[-1] >= best_perf:
             best_perf = perf_indicators[-1]
             best_model = True
+            waiting = 0
         else:
+            waiting += 1
             best_model = False
 
         logger.info('=> saving checkpoint to {}'.format(final_output_dir))
@@ -210,9 +215,13 @@ def main():
             'model': cfg.MODEL.NAME,
             'state_dict': model.state_dict(),
             'best_state_dict': model.module.state_dict(),
-            'perf': perf_indicators[0],
+            'perf': perf_indicators[-1],
             'optimizer': optimizer.state_dict(),
         }, best_model, final_output_dir)
+
+        if waiting > patience:
+            print(f"Early stop at epoch {epoch}")
+            break
 
     final_model_state_file = os.path.join(
         final_output_dir, 'final_state.pth'
@@ -222,6 +231,7 @@ def main():
     )
     torch.save(model.module.state_dict(), final_model_state_file)
     writer_dict['writer'].close()
+    
 
 
 if __name__ == '__main__':
