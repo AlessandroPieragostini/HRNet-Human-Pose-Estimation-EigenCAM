@@ -37,6 +37,7 @@ from utils.utils import get_model_summary
 
 import dataset
 import models
+import logging
 
 
 def parse_args():
@@ -74,7 +75,7 @@ def parse_args():
 
     return args
 
-@track_emissions(save_to_api=True)
+@track_emissions(country_iso_code = "ITA", offline = True)
 def main():
     args = parse_args()
     update_config(cfg, args)

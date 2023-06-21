@@ -38,10 +38,11 @@ def train(config, train_loader, model, criterion, criterion_kld, optimizer, epoc
     batch_time = AverageMeter()
     data_time = AverageMeter()
     
-    roles = [ 'Teacher_' if i == config.MODEL.N_STAGE-1 else f'Student{i+1}' 
-                for i in range(config.MODEL.N_STAGE) ]
-    loss_by_stage = [ AverageMeter() for i in range(config.MODEL.N_STAGE) ]
-    acc_by_stage = [ AverageMeter() for i in range(config.MODEL.N_STAGE) ]
+    num_outputs = config.MODEL.N_STAGE if config.LOSS.USE_KLD else 1
+    roles = [ 'Teacher_' if i == num_outputs-1 else f'Student{i+1}' 
+                for i in range(num_outputs) ]
+    loss_by_stage = [ AverageMeter() for i in range(num_outputs) ]
+    acc_by_stage = [ AverageMeter() for i in range(num_outputs) ]
 
     losses = AverageMeter()
     pred_to_plot = []
@@ -68,12 +69,17 @@ def train(config, train_loader, model, criterion, criterion_kld, optimizer, epoc
         target = target.cuda(non_blocking=True)
         target_weight = target_weight.cuda(non_blocking=True)
         
-        #distillating from teacher to all students
         loss_hard = 0
         loss_soft = 0
         teacher_loss = 0
 
         if isinstance(outputs, list):
+
+            if not config.LOSS.USE_KLD:
+                outputs = [ outputs[-1] ]   
+            else:
+                kld_couples = config.LOSS.KLD_COUPLES
+
             for index, output in enumerate(outputs):                
                 if index == len(outputs) - 1:
                     teacher_loss = criterion(output, target, target_weight)
@@ -81,12 +87,13 @@ def train(config, train_loader, model, criterion, criterion_kld, optimizer, epoc
                     stage_loss = teacher_loss
                 else:
                     lh = criterion(output, target, target_weight)
+                    ls = 0
+                    if config.LOSS.USE_KLD:
+                        for index_dist in range(index+1, config.MODEL.N_STAGE):
+                            if [index+1, index_dist+1] in kld_couples:
+                                ls += criterion_kld(output, outputs[index_dist], target_weight)
                     
-                    if config.LOSS.USE_KLD: 
-                        ls = criterion_kld(output, outputs[-1], target_weight)
                         ls *= kld_weight * cons_weight
-                    else:
-                        ls = 0
 
                     loss_hard += lh
                     loss_soft += ls
@@ -125,21 +132,21 @@ def train(config, train_loader, model, criterion, criterion_kld, optimizer, epoc
                       data_time=data_time, loss=losses)
             msg += "".join(["{role} Acc {acc.val:.5f} ({acc.avg:.5f})  ".format(
                     role = roles[i][0] + roles[i][-1], acc = acc_by_stage[i]
-            ) for i in range(config.MODEL.N_STAGE) ])
+            ) for i in range(num_outputs) ])
 
             logger.info(msg)
-            prefix = '{}_ep{}_b{}'.format(os.path.join(output_dir, 'val'), epoch, i)
+            prefix = '{}_ep{}_b{}'.format(os.path.join(output_dir, 'train'), epoch, i)
 
             save_gt_debug_images(config, input, meta, target, prefix)
                 
-            for index in range(config.MODEL.N_STAGE):
+            for index in range(num_outputs):
                 save_pred_debug_images(config, input, meta, outputs[index], pred_to_plot[index]*4, prefix  + f"_{roles[index]}")
         
     #once for epoch
     writer = writer_dict['writer']
+    global_steps = writer_dict['train_global_steps']
 
-    for index in range(config.MODEL.N_STAGE):
-        global_steps = writer_dict['train_global_steps']
+    for index in range(num_outputs):
         writer.add_scalar( roles[index] + '_train_loss', loss_by_stage[index].val, global_steps)
         writer.add_scalar( roles[index] + '_train_acc', acc_by_stage[index].val, global_steps)
     
@@ -152,10 +159,11 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
     
     batch_time = AverageMeter()
     
-    roles = [ 'Teacher_' if i == config.MODEL.N_STAGE-1 else f'Student{i+1}' 
-                for i in range(config.MODEL.N_STAGE) ]
-    loss_by_stage = [ AverageMeter() for i in range(config.MODEL.N_STAGE) ]
-    acc_by_stage = [ AverageMeter() for i in range(config.MODEL.N_STAGE) ]
+    num_outputs = config.MODEL.N_STAGE if config.LOSS.USE_KLD else 1
+    roles = [ 'Teacher_' if i == num_outputs-1 else f'Student{i+1}' 
+                for i in range(num_outputs) ]
+    loss_by_stage = [ AverageMeter() for i in range(num_outputs) ]
+    acc_by_stage = [ AverageMeter() for i in range(num_outputs) ]
     pred_to_plot = []
     
     losses = AverageMeter()
@@ -167,12 +175,12 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
 
     # N_STAGE corrisponde al numero di stage e output
     all_preds = np.zeros(
-        (config.MODEL.N_STAGE, num_samples, config.MODEL.NUM_JOINTS, 3),
+        (num_outputs, num_samples, config.MODEL.NUM_JOINTS, 3),
         dtype=np.float32
     )
     
     # N_STAGE corrisponde al numero di stage e output
-    all_boxes = np.zeros((config.MODEL.N_STAGE, num_samples, 6))
+    all_boxes = np.zeros((num_samples, 6))
     
     image_path = []
     filenames = []
@@ -197,12 +205,17 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
             score = meta['score'].numpy()
             
 
-            #distillating from teacher to all students
             loss_hard = 0
             loss_soft = 0
             teacher_loss = 0
 
             if isinstance(outputs, list):
+
+                if not config.LOSS.USE_KLD:
+                    outputs = [ outputs[-1] ]   
+                else:
+                    kld_couples = config.LOSS.KLD_COUPLES
+
                 for index, output in enumerate(outputs):                
                     if index == len(outputs) - 1:
                         teacher_loss = criterion(output, target, target_weight)
@@ -210,12 +223,13 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
                         stage_loss = teacher_loss
                     else:
                         lh = criterion(output, target, target_weight)
+                        ls = 0
+                        if config.LOSS.USE_KLD:
+                            for index_dist in range(index+1, config.MODEL.N_STAGE):
+                                if [index+1, index_dist+1] in kld_couples:
+                                    ls += criterion_kld(output, outputs[index_dist], target_weight)
                         
-                        if config.LOSS.USE_KLD: 
-                            ls = criterion_kld(output, outputs[-1], target_weight)
                             ls *= kld_weight * cons_weight
-                        else:
-                            ls = 0
 
                         loss_hard += lh
                         loss_soft += ls
@@ -226,16 +240,9 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
                                             target.detach().cpu().numpy())
                     pred_to_plot.append(pred)
                     acc_by_stage[index].update(avg_acc, cnt)
-                    preds, maxvals = get_final_preds(
-                    config, output.clone().cpu().numpy(), c, s)
-
+                    preds, maxvals = get_final_preds(config, output.clone().cpu().numpy(), c, s)
                     all_preds[index][idx:idx + num_images, :, 0:2] = preds[:, :, 0:2]
                     all_preds[index][idx:idx + num_images, :, 2:3] = maxvals
-                    # double check this all_boxes parts
-                    all_boxes[index][idx:idx + num_images, 0:2] = c[:, 0:2]
-                    all_boxes[index][idx:idx + num_images, 2:4] = s[:, 0:2]
-                    all_boxes[index][idx:idx + num_images, 4] = np.prod(s*200, 1)
-                    all_boxes[index][idx:idx + num_images, 5] = score
             else:
                 raise ValueError("Model output is not a list")
 
@@ -245,6 +252,11 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
+
+            all_boxes[idx:idx + num_images, 0:2] = c[:, 0:2]
+            all_boxes[idx:idx + num_images, 2:4] = s[:, 0:2]
+            all_boxes[idx:idx + num_images, 4] = np.prod(s*200, 1)
+            all_boxes[idx:idx + num_images, 5] = score
 
             image_path.extend(meta['image'])
             idx += num_images
@@ -257,27 +269,28 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
                         epoch, i, len(val_loader), batch_time=batch_time, loss=losses)
                 msg += "".join(["{role} Acc {acc.val:.5f} ({acc.avg:.5f})  ".format(
                         role = roles[i][0] + roles[i][-1], acc = acc_by_stage[i]
-                ) for i in range(config.MODEL.N_STAGE) ])
+                ) for i in range(num_outputs) ])
                 logger.info(msg)
 
                 prefix = '{}_ep{}_b{}'.format(os.path.join(output_dir, 'val'), epoch, i)
 
                 save_gt_debug_images(config, input, meta, target, prefix)
                 
-                for index in range(config.MODEL.N_STAGE):
+                for index in range(num_outputs):
                     save_pred_debug_images(config, input, meta, outputs[index], pred_to_plot[index]*4, prefix  + f"_{roles[index]}")
                     
         #once for epoch
         model_name = config.MODEL.NAME
-        perf_indicators = [0]*config.MODEL.N_STAGE
+        perf_indicators = [0]*num_outputs
         prefix = '{}_ep{}'.format(os.path.join(output_dir, 'val'), epoch)
         
         writer = writer_dict['writer']
-
-        for index in range(config.MODEL.N_STAGE):
+        global_steps = writer_dict['valid_global_steps']
+        
+        for index in range(num_outputs):
             
             name_values, perf_indicators[index] = val_dataset.evaluate(
-                config, all_preds[index], output_dir, all_boxes[index], image_path,
+                config, all_preds[index], output_dir, all_boxes, image_path,
                 filenames, imgnums
             )
 
@@ -289,7 +302,6 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
             else:
                 _print_name_value(name_values, model_name)
 
-            global_steps = writer_dict['valid_global_steps']
             writer.add_scalar( roles[index] + '_valid_loss', loss_by_stage[index].avg, global_steps)
             writer.add_scalar( roles[index] + '_valid_acc', acc_by_stage[index].avg, global_steps)
 

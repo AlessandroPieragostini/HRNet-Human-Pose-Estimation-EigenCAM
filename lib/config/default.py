@@ -46,13 +46,13 @@ _C.MODEL.IMAGE_SIZE = [256, 256]  # width * height, ex: 192 * 256
 _C.MODEL.HEATMAP_SIZE = [64, 64]  # width * height, ex: 24 * 32
 _C.MODEL.SIGMA = 2
 _C.MODEL.EXTRA = CN(new_allowed=True)
-
 _C.LOSS = CN()
 _C.LOSS.USE_OHKM = False
 _C.LOSS.USE_KLD = False
 _C.LOSS.TOPK = 8
 _C.LOSS.USE_TARGET_WEIGHT = True
 _C.LOSS.USE_DIFFERENT_JOINTS_WEIGHT = False
+_C.LOSS.KLD_COUPLES = [ (3,4) ]
 
 # DATASET related params
 _C.DATASET = CN()
@@ -97,9 +97,9 @@ _C.TRAIN.BATCH_SIZE_PER_GPU = 32
 _C.TRAIN.SHUFFLE = True
 
 #distillation config
-_C.TRAIN.KLD_WEIGHT = 5.0
-_C.TRAIN.TEACHER_WEIGHT = 6.0
-_C.TRAIN.LENGTH = 60
+_C.TRAIN.KLD_WEIGHT = 1.0
+_C.TRAIN.TEACHER_WEIGHT = 1.0
+_C.TRAIN.LENGTH = 0
 
 # testing
 _C.TEST = CN()
