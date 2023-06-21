@@ -167,7 +167,7 @@ def main():
         final_output_dir, 'checkpoint.pth'
     )
 
-    patience = 10
+    patience = 20
     waiting = 0
 
     if cfg.AUTO_RESUME and os.path.exists(checkpoint_file):
