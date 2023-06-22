@@ -26,7 +26,7 @@ MODEL:
   INIT_WEIGHTS: true
   NAME: multi_out_pose_hrnet
   NUM_JOINTS: 12
-  PRETRAINED: 'models/pytorch/pose_coco/pose_hrnet_w32_256x192.pth'
+  PRETRAINED: 'models/pytorch/imagenet/hrnet_w32-36af842e.pth'
   TARGET_TYPE: gaussian
   N_STAGE: 4
   OUT_CHANNELS: 32
@@ -91,8 +91,12 @@ MODEL:
       - 256
       FUSE_METHOD: SUM
 LOSS:
-  USE_KLD: false
+  USE_KLD: true
   USE_TARGET_WEIGHT: false
+  KLD_COUPLES:
+  - [1,2]
+  - [2,3]
+  - [3,4]
 TRAIN:
   BATCH_SIZE_PER_GPU: 32
   SHUFFLE: true
@@ -101,14 +105,14 @@ TRAIN:
   OPTIMIZER: adam
   LR: 0.001
   LR_FACTOR: 0.1
-  LR_STEP:
-  - 170
-  - 200
+  DECAY_START : 5
+  DECAY_STEP : 3
   WD: 0.0001
   GAMMA1: 0.99
   GAMMA2: 0.0
   MOMENTUM: 0.9
   NESTEROV: false
+  LENGTH: 20
 TEST:
   BATCH_SIZE_PER_GPU: 32
   COCO_BBOX_FILE: 'data/coco/person_detection_results/COCO_val2017_detections_AP_H_56_person.json'

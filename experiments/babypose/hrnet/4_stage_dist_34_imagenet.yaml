@@ -103,15 +103,14 @@ TRAIN:
   OPTIMIZER: adam
   LR: 0.001
   LR_FACTOR: 0.1
-  LR_STEP:
-  - 170
-  - 200
+  DECAY_START : 5
+  DECAY_STEP : 3
   WD: 0.0001
   GAMMA1: 0.99
   GAMMA2: 0.0
   MOMENTUM: 0.9
   NESTEROV: false
-  LENGTH: 100
+  LENGTH: 20
 TEST:
   BATCH_SIZE_PER_GPU: 32
   COCO_BBOX_FILE: 'data/coco/person_detection_results/COCO_val2017_detections_AP_H_56_person.json'

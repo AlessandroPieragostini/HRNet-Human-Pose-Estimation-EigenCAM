@@ -2,7 +2,7 @@ emissions/
 textlog/
 data/
 lib/nms/gpu_nms.cpp
-
+tmp.py
 # IntelliJ project files
 .idea
 *.iml
