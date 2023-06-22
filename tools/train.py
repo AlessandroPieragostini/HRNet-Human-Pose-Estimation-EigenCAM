@@ -194,9 +194,8 @@ def main():
     lr_factor = cfg.TRAIN.LR_FACTOR
 
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR( optimizer, lr_lambda = 
-        lambda ep : 1 if ep <= decay_start else exp(-lr_factor * (1 + (ep - decay_start) // decay_step),
-        last_epoch = last_epoch )
-    )
+        lambda ep : 1 if ep <= decay_start else exp(-lr_factor * (1 + (ep - decay_start) // decay_step)),
+        last_epoch = last_epoch)
 
     for epoch in range(begin_epoch, cfg.TRAIN.END_EPOCH):
         lr_scheduler.step()

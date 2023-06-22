@@ -8,4 +8,4 @@ python tools/train.py --cfg experiments/babypose/hrnet/4_stage_dist_all4_imagene
 mv emissions/emissions.csv emissions/4_stage_dist_all4_imagenet_emissions.csv &&
 python tools/train.py --cfg experiments/babypose/hrnet/4_stage_dist_between_imagenet.yaml &&
 mv emissions/emissions.csv emissions/4_stage_dist_between_imagenet_emissions.csv &&
-echo "all trainings done"
+echo "all trainings done" > done
