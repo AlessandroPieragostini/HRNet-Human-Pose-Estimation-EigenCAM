@@ -99,7 +99,7 @@ TRAIN:
   BEGIN_EPOCH: 0
   END_EPOCH: 210 #non sono troppe
   OPTIMIZER: adam
-  LR: 0.001
+  LR: 0.0001
   LR_FACTOR: 0.1
   DECAY_START : 5
   DECAY_STEP : 3
