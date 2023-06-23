@@ -28,7 +28,7 @@ MODEL:
   INIT_WEIGHTS: true
   NAME: multi_out_pose_hrnet
   NUM_JOINTS: 12
-  PRETRAINED: 'models\pytorch\pose_coco\pose_hrnet_w32_256x192.pth'
+  PRETRAINED: 'models/pytorch/pose_coco/pose_hrnet_w32_256x192.pth'
   TARGET_TYPE: gaussian
   IMAGE_SIZE:
   - 192
