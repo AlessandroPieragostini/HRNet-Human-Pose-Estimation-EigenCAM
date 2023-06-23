@@ -108,7 +108,7 @@ def train(config, train_loader, model, criterion, criterion_kld, optimizer, epoc
                     loss_soft += ls
                     stage_loss = lh + ls
                     
-                loss_by_stage[index].update(stage_loss.item(), input.size(0))
+                loss_by_stage[index].update(stage_loss, input.size(0))
                 _, avg_acc, cnt, pred = accuracy(output.detach().cpu().numpy(),
                                          target.detach().cpu().numpy())
                 pred_to_plot.append(pred)
@@ -124,9 +124,9 @@ def train(config, train_loader, model, criterion, criterion_kld, optimizer, epoc
         optimizer.step()
 
         losses.update(loss.item(), input.size(0))
-        losses_hard.update(loss_hard.item(), input.size(0))
-        losses_soft.update(loss_soft.item(), input.size(0))
-        losses_teacher.update(teacher_loss.item(), input.size(0))
+        losses_hard.update(loss_hard, input.size(0))
+        losses_soft.update(loss_soft, input.size(0))
+        losses_teacher.update(teacher_loss, input.size(0))
 
         # measure elapsed time
         batch_time.update(time.time() - end)
@@ -139,9 +139,9 @@ def train(config, train_loader, model, criterion, criterion_kld, optimizer, epoc
                   'Speed {speed:.1f} samples/s\t' \
                   'Data {data_time.val:.3f}s ({data_time.avg:.3f}s)\t' \
                   'Loss {loss.val:.5f} ({loss.avg:.5f})\t'\
-                  'Loss H {loss_hard.val:.5f} ({loss_hard.avg:.5f})\t'\
-                  'Loss S {loss_soft.val:.5f} ({loss_soft.avg:.5f})\t'\
-                  'Loss T {loss_teacher.val:.5f} ({loss_teacher.avg:.5f})\t'.format(
+                  'Loss H {loss_hard.val:.10f} ({loss_hard.avg:.10f})\t'\
+                  'Loss S {loss_soft.val:.10f} ({loss_soft.avg:.10f})\t'\
+                  'Loss T {loss_teacher.val:.10f} ({loss_teacher.avg:.10f})\t'.format(
                       epoch, i, len(train_loader), batch_time=batch_time,
                       speed=input.size(0)/batch_time.val,
                       data_time=data_time, loss=losses, loss_hard = losses_hard,
@@ -252,7 +252,7 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
                         ls = 0
                         lh = 0
                         
-                        if index in dist_to and config.LOSS.USE_MSE:
+                        if index+1 in dist_to and config.LOSS.USE_MSE:
                             lh += criterion(output, target, target_weight)
                         
                         if config.LOSS.USE_KLD:
@@ -266,7 +266,7 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
                         loss_soft += ls
                         stage_loss = lh + ls
                         
-                    loss_by_stage[index].update(stage_loss.item(), input.size(0))
+                    loss_by_stage[index].update(stage_loss, input.size(0))
                     _, avg_acc, cnt, pred = accuracy(output.detach().cpu().numpy(),
                                             target.detach().cpu().numpy())
                     pred_to_plot.append(pred)
@@ -279,9 +279,9 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
 
             loss = loss_hard + teacher_loss + loss_soft
             losses.update(loss.item(), num_images)
-            losses_hard.update(loss_hard.item(), input.size(0))
-            losses_soft.update(loss_soft.item(), input.size(0))
-            losses_teacher.update(teacher_loss.item(), input.size(0))
+            losses_hard.update(loss_hard, input.size(0))
+            losses_soft.update(loss_soft, input.size(0))
+            losses_teacher.update(teacher_loss, input.size(0))
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
@@ -299,9 +299,9 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
                 msg = 'Epoch: [{0}][{1}/{2}]\t' \
                     'Time {batch_time.val:.3f}s ({batch_time.avg:.3f}s)\t' \
                     'Loss {loss.val:.5f} ({loss.avg:.5f})\t'\
-                    'Loss H {loss_hard.val:.5f} ({loss_hard.avg:.5f})\t'\
-                    'Loss S {loss_soft.val:.5f} ({loss_soft.avg:.5f})\t'\
-                    'Loss T {loss_teacher.val:.5f} ({loss_teacher.avg:.5f})\t'.format(
+                    'Loss H {loss_hard.val:.10f} ({loss_hard.avg:.10f})\t'\
+                    'Loss S {loss_soft.val:.10f} ({loss_soft.avg:.10f})\t'\
+                    'Loss T {loss_teacher.val:.10f} ({loss_teacher.avg:.10f})\t'.format(
                         epoch, i, len(val_loader), batch_time=batch_time,
                         loss=losses, loss_hard = losses_hard,
                         loss_soft = losses_soft, loss_teacher = losses_teacher)
