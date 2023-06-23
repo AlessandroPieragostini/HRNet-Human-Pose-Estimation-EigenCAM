@@ -94,7 +94,7 @@ def train(config, train_loader, model, criterion, criterion_kld, optimizer, epoc
                     ls = 0
                     lh = 0
                     
-                    if index in dist_to and config.LOSS.USE_MSE:
+                    if index+1 in dist_to and config.LOSS.USE_MSE:
                         lh += criterion(output, target, target_weight)
                     
                     if config.LOSS.USE_KLD:
