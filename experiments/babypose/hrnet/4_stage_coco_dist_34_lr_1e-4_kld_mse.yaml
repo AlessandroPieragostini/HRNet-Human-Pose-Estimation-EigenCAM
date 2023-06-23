@@ -23,13 +23,13 @@ DATASET:
   TEST_SET: 'val'
   TRAIN_SET: 'train'
 MODEL:
+  N_STAGE: 4
+  MULTI : true
   INIT_WEIGHTS: true
   NAME: multi_out_pose_hrnet
   NUM_JOINTS: 12
-  PRETRAINED: 'models/pytorch/imagenet/hrnet_w32-36af842e.pth'
+  PRETRAINED: 'models\pytorch\pose_coco\pose_hrnet_w32_256x192.pth'
   TARGET_TYPE: gaussian
-  N_STAGE: 4
-  OUT_CHANNELS: 32
   IMAGE_SIZE:
   - 192
   - 256
@@ -92,25 +92,28 @@ MODEL:
       FUSE_METHOD: SUM
 LOSS:
   USE_KLD: true
+  USE_MSE: true
   USE_TARGET_WEIGHT: false
-  KLD_COUPLES:
+  KLD_COUPLES :
   - [3,4]
 TRAIN:
+  LR: 0.0001
+  LR_FACTOR: 0.1
+  DECAY_START : 5
+  DECAY_STEP : 5
+  KLD_WEIGHT : 1.0
+  TEACHER_WEIGHT : 1.0
+  LENGTH : 0
   BATCH_SIZE_PER_GPU: 32
   SHUFFLE: true
   BEGIN_EPOCH: 0
   END_EPOCH: 210 #non sono troppe
   OPTIMIZER: adam
-  LR: 0.0001
-  LR_FACTOR: 0.1
-  DECAY_START : 5
-  DECAY_STEP : 2
   WD: 0.0001
   GAMMA1: 0.99
   GAMMA2: 0.0
   MOMENTUM: 0.9
   NESTEROV: false
-  LENGTH: 20
 TEST:
   BATCH_SIZE_PER_GPU: 32
   COCO_BBOX_FILE: 'data/coco/person_detection_results/COCO_val2017_detections_AP_H_56_person.json'
@@ -126,7 +129,7 @@ TEST:
   SHIFT_HEATMAP: true
 DEBUG:
   DEBUG: true
-  SAVE_BATCH_IMAGES_GT: true
-  SAVE_BATCH_IMAGES_PRED: true
+  SAVE_BATCH_IMAGES_GT: false
+  SAVE_BATCH_IMAGES_PRED: false
   SAVE_HEATMAPS_GT: false
   SAVE_HEATMAPS_PRED: false

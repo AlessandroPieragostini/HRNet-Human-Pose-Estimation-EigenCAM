@@ -1,11 +1,9 @@
-python tools/train.py --cfg experiments/babypose/hrnet/3_stage_imagenet.yaml &&
-mv emissions/emissions.csv emissions/3_stage_imagenet_emissions.csv &&
-python tools/train.py --cfg experiments/babypose/hrnet/4_stage_imagenet.yaml &&
-mv emissions/emissions.csv emissions/4_stage_imagenet_emissions.csv &&
-python tools/train.py --cfg experiments/babypose/hrnet/4_stage_dist_34_imagenet.yaml &&
-mv emissions/emissions.csv emissions/4_stage_dist_34_imagenet_emissions.csv &&
-python tools/train.py --cfg experiments/babypose/hrnet/4_stage_dist_all4_imagenet.yaml &&
-mv emissions/emissions.csv emissions/4_stage_dist_all4_imagenet_emissions.csv &&
-python tools/train.py --cfg experiments/babypose/hrnet/4_stage_dist_between_imagenet.yaml &&
-mv emissions/emissions.csv emissions/4_stage_dist_between_imagenet_emissions.csv &&
+python tools/train.py --cfg experiments/babypose/hrnet/3_stage_coco_lr_1e-4.yaml &&
+mv emissions/emissions.csv emissions/3_stage_coco_lr_1e-4.yaml_emissions.csv &&
+python tools/train.py --cfg experiments/babypose/hrnet/4_stage_coco_dist_34_lr_1e-4_kld_mse.yaml &&
+mv emissions/emissions.csv emissions/4_stage_coco_dist_34_lr_1e-4_kld_mse_emissions.csv &&
+python tools/train.py --cfg experiments/babypose/hrnet/4_stage_coco_dist_34_lr_1e-4_kld.yaml &&
+mv emissions/emissions.csv emissions/4_stage_coco_dist_34_lr_1e-4_kld_emissions.csv &&
+python tools/train.py --cfg experiments/babypose/hrnet/4_stage_coco_lr_1e-4.yaml &&
+mv emissions/emissions.csv emissions/4_stage_coco_lr_1e-4_emissions.csv &&
 echo "all trainings done" > done

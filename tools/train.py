@@ -159,7 +159,9 @@ def main():
         pin_memory=cfg.PIN_MEMORY
     )
 
-    best_perf = 0.0
+    num_outputs = cfg.MODEL.N_STAGE if cfg.MODEL.MULTI else 1 
+    best_perf = [0] * num_outputs
+
     best_model = False
     last_epoch = -1
     optimizer = get_optimizer(cfg, model)
@@ -211,13 +213,15 @@ def main():
             final_output_dir, tb_log_dir, writer_dict, epoch
         )
 
-        if perf_indicators[-1] >= best_perf:
-            best_perf = perf_indicators[-1]
-            best_model = True
-            waiting = 0
-        else:
+        best_model = False
+        for index, pf in enumerate(perf_indicators):
+            if pf >= best_perf[index]:
+                best_perf[index] = pf
+                best_model = True
+                waiting = 0
+        
+        if not best_model:
             waiting += 1
-            best_model = False
 
         logger.info('=> saving checkpoint to {}'.format(final_output_dir))
         save_checkpoint({
