@@ -173,6 +173,10 @@ def main():
     patience = 20
     waiting = 0
 
+    if cfg.MODEL.MULTI:
+        kld_couples = cfg.LOSS.KLD_COUPLES
+        stage_to_eval = set ([l[0] - 1 for l in kld_couples] + [l[1] - 1 for l in kld_couples])
+
     if cfg.AUTO_RESUME and os.path.exists(checkpoint_file):
         logger.info("=> loading checkpoint '{}'".format(checkpoint_file))
         checkpoint = torch.load(checkpoint_file)
@@ -214,9 +218,16 @@ def main():
         )
 
         best_model = False
-        for index, pf in enumerate(perf_indicators):
-            if pf >= best_perf[index]:
-                best_perf[index] = pf
+        if cfg.MODEL.MULTI:
+            for index in stage_to_eval:
+                pf = perf_indicators[index]
+                if pf >= best_perf[index]:
+                    best_perf[index] = pf
+                    best_model = True
+                    waiting = 0
+        else:
+            if perf_indicators[0] >= best_perf[0]:
+                best_perf[0] = perf_indicators[0]
                 best_model = True
                 waiting = 0
         
