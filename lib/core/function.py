@@ -343,7 +343,7 @@ def validate(config, val_loader, val_dataset, model, criterion, criterion_kld,  
                 _print_name_value(name_values, model_name)
 
             #writer.add_scalar( roles[index] + '_valid_loss', loss_by_stage[index].avg, global_steps)
-            #writer.add_scalar( roles[index] + '_valid_acc', acc_by_stage[index].avg, global_steps)
+            writer.add_scalar( roles[index] + '_valid_acc', acc_by_stage[index].avg, global_steps)
 
             if isinstance(name_values, list):
                 for name_value in name_values:

@@ -32,6 +32,8 @@ _C.TRAIN.DECAY_STEP = 1
 _C.TRAIN.KLD_WEIGHT = 1.0
 _C.TRAIN.TEACHER_WEIGHT = 1.0
 _C.TRAIN.LENGTH = 0
+_C.TRAIN.LR_TYPE = "custom"
+_C.TRAIN.LR_STEP = []
 ###############################
 
 _C.OUTPUT_DIR = ''

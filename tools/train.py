@@ -189,19 +189,23 @@ def main():
         logger.info("=> loaded checkpoint '{}' (epoch {})".format(
             checkpoint_file, checkpoint['epoch']))
 
-    '''
-    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, cfg.TRAIN.LR_STEP, cfg.TRAIN.LR_FACTOR,
-        last_epoch=last_epoch
-    )
-    '''
+    if cfg.TRAIN.LR_TYPE == "custom":
+        lr_scheduler = torch.optim.lr_scheduler.LambdaLR( optimizer, lr_lambda = 
+        lambda ep : 1 if ep <= decay_start else exp(-lr_factor * (1 + (ep - decay_start) // decay_step)),
+        last_epoch = last_epoch)
+    elif cfg.TRAIN.LR_TYPE == "multistep":
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            optimizer, cfg.TRAIN.LR_STEP, cfg.TRAIN.LR_FACTOR,
+            last_epoch=last_epoch
+        )
+    else:
+        lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda = lambda ep : 1, last_epoch=last_epoch)
+
     decay_start = cfg.TRAIN.DECAY_START
     decay_step = cfg.TRAIN.DECAY_STEP
     lr_factor = cfg.TRAIN.LR_FACTOR
 
-    lr_scheduler = torch.optim.lr_scheduler.LambdaLR( optimizer, lr_lambda = 
-        lambda ep : 1 if ep <= decay_start else exp(-lr_factor * (1 + (ep - decay_start) // decay_step)),
-        last_epoch = last_epoch)
+    
 
     for epoch in range(begin_epoch, cfg.TRAIN.END_EPOCH):
         lr_scheduler.step()
