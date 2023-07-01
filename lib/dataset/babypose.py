@@ -246,7 +246,7 @@ class BabyPoseDataset(JointsDataset):
         num_boxes = 0
         for n_img in range(0, len(all_boxes)):
             det_res = all_boxes[n_img]
-            if det_res['category_id'] != 1:
+            if det_res['category_id'] != 3:
                 continue
             img_name = self.image_path_from_index(det_res['image_id'])
             box = det_res['bbox']

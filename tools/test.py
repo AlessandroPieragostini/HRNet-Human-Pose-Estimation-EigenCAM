@@ -29,6 +29,7 @@ from config import update_config
 from core.loss import JointsMSELoss, JointsKLDLoss
 from core.function import validate
 from utils.utils import create_logger
+from codecarbon import track_emissions
 
 import dataset
 import models
@@ -67,7 +68,11 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-
+@track_emissions(country_iso_code = "ITA", offline = True)
+def do_validate(cfg, valid_loader, valid_dataset, model, criterion, criterion_kld,
+             final_output_dir, tb_log_dir, writer_dict):
+    validate(cfg, valid_loader, valid_dataset, model, criterion, criterion_kld,
+             final_output_dir, tb_log_dir, writer_dict)
 def main():
     args = parse_args()
     update_config(cfg, args)
@@ -132,7 +137,7 @@ def main():
     )
 
     # evaluate on validation set
-    validate(cfg, valid_loader, valid_dataset, model, criterion, criterion_kld,
+    do_validate(cfg, valid_loader, valid_dataset, model, criterion, criterion_kld,
              final_output_dir, tb_log_dir, writer_dict)
 
 

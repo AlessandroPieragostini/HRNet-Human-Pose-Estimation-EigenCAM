@@ -170,7 +170,7 @@ def main():
         final_output_dir, 'checkpoint.pth'
     )
 
-    patience = 20
+    patience = 60
     waiting = 0
 
     if cfg.MODEL.MULTI:

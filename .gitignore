@@ -3,6 +3,8 @@ textlog/
 data/
 lib/nms/gpu_nms.cpp
 tmp.py
+old*/
+visualization/result*
 # IntelliJ project files
 .idea
 *.iml

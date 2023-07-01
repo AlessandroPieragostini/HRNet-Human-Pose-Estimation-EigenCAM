@@ -33,7 +33,7 @@ from utils.utils import save_checkpoint
 from utils.utils import create_logger
 from utils.utils import get_model_summary
 from models.pose_hrnet import get_pose_net
-from models.multi_out_pose_hrnet import get__pose_net
+from models.multi_out_pose_hrnet import get_pose_net
 
 import dataset
 import models

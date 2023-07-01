@@ -99,11 +99,11 @@ LOSS:
   - [2,4]
   - [3,4]
 TRAIN:
-  LR: 0.00025
+  LR: 0.00075
   LR_TYPE : multistep
-  LR_FACTOR: 0.1
+  LR_FACTOR: 0.33
   LR_STEP:
-  - 25
+  - 30
   - 50
   KLD_WEIGHT : 2000.0
   TEACHER_WEIGHT : 1.0
@@ -111,7 +111,7 @@ TRAIN:
   BATCH_SIZE_PER_GPU: 32
   SHUFFLE: true
   BEGIN_EPOCH: 0
-  END_EPOCH: 100
+  END_EPOCH: 60
   OPTIMIZER: adam
   WD: 0.0001
   GAMMA1: 0.99
