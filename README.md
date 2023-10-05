@@ -58,7 +58,7 @@ All experiments use this model.
 
 ### Data preparation
 
-**For BabyPose data**, please download from [BabyPose download](https://mega.nz/file/t2oVELIS#hfFmccK7TkBeUcywf9fp6fSzrWbxexlzXJ3ngTRRU6U), extract files under {POSE_ROOT}/data and make them look like this:
+**For BabyPose data**, please download from [BabyPose download](https://mega.nz/file/434XTAQC#hfFmccK7TkBeUcywf9fp6fSzrWbxexlzXJ3ngTRRU6U), extract files under {POSE_ROOT}/data and make them look like this:
 ```
 ${POSE_ROOT}
 |-- data
@@ -77,7 +77,7 @@ ${POSE_ROOT}
             |-- test
 ```
 ### Trained models
-Download [here](https://mega.nz/file/smg2mDZR#U0XgNaD4vw5NwX7m1_Dz-DlOrGcxUWA8O5goHe16K2s) our trained models for each experiment and extract them in {POSE_ROOT}/models/pytorch.
+Download [here](https://mega.nz/file/omAQBIaY#U0XgNaD4vw5NwX7m1_Dz-DlOrGcxUWA8O5goHe16K2s) our trained models for each experiment and extract them in {POSE_ROOT}/models/pytorch.
 
 ### Configuration
 Compared to [main work](https://github.com/leoxiaobin/deep-high-resolution-net.pytorch), new configuration options are available:
