@@ -108,4 +108,4 @@ python tools/train.py \
 ```
 
 ### Contributors
-[Vito Scaraggi](https://github.com/Vito-Scaraggi) & [Luca Guidi](https://github.com/LucaGuidi5) 
+[Alessandro Pieragostini](https://github.com/AlessandroPieragostini) & [Kevin Javier](https://github.com/sup3rk24) 
