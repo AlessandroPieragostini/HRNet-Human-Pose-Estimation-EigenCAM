@@ -1,0 +1,27 @@
+2024-09-04 13:03:42,043 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 13:08:31,515 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 13:09:32,056 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 13:26:29,197 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 13:35:27,716 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 13:35:45,725 | Arch | AP | AP .5 | AP .75 | AP (M) | AP (L) | AR | AR .5 | AR .75 | AR (M) | AR (L) |
+2024-09-04 13:35:45,731 | multi_ | 0.831 | 1.000 | 0.988 | -1.000 | 0.831 | 0.862 | 1.000 | 0.995 | -1.000 | 0.862 |
+2024-09-04 13:38:08,267 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 13:40:18,363 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 13:41:19,244 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 13:42:08,056 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 13:44:05,261 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 13:47:23,315 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 13:59:10,370 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 14:03:54,187 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 14:05:52,296 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 14:06:07,443 | Arch | AP | AP .5 | AP .75 | AP (M) | AP (L) | AR | AR .5 | AR .75 | AR (M) | AR (L) |
+2024-09-04 14:06:07,457 | multi_ | 0.831 | 1.000 | 0.988 | -1.000 | 0.831 | 0.862 | 1.000 | 0.995 | -1.000 | 0.862 |
+2024-09-04 14:15:53,915 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 14:16:09,217 | Arch | AP | AP .5 | AP .75 | AP (M) | AP (L) | AR | AR .5 | AR .75 | AR (M) | AR (L) |
+2024-09-04 14:16:09,231 | multi_ | 0.831 | 1.000 | 0.988 | -1.000 | 0.831 | 0.862 | 1.000 | 0.995 | -1.000 | 0.862 |
+2024-09-04 14:17:04,982 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 14:17:20,042 | Arch | AP | AP .5 | AP .75 | AP (M) | AP (L) | AR | AR .5 | AR .75 | AR (M) | AR (L) |
+2024-09-04 14:17:20,055 | multi_ | 0.831 | 1.000 | 0.988 | -1.000 | 0.831 | 0.862 | 1.000 | 0.995 | -1.000 | 0.862 |
+2024-09-04 14:18:34,016 => loading model from /home/gruppo9/OnlineKD-HRNet-Human-Pose-Estimation-GradCAM/models/pytorch/babypose/4_stage_coco_lr_7-5e-4.pth
+2024-09-04 14:18:49,012 | Arch | AP | AP .5 | AP .75 | AP (M) | AP (L) | AR | AR .5 | AR .75 | AR (M) | AR (L) |
+2024-09-04 14:18:49,028 | multi_ | 0.831 | 1.000 | 0.988 | -1.000 | 0.831 | 0.862 | 1.000 | 0.995 | -1.000 | 0.862 |
